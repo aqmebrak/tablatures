@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { resolveKey } from './keymap';
 
-const key = (k: string, mods: Partial<{ ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }> = {}) =>
-	resolveKey({ key: k, ctrlKey: false, metaKey: false, shiftKey: false, ...mods });
+const key = (
+	k: string,
+	mods: Partial<{ ctrlKey: boolean; metaKey: boolean; shiftKey: boolean }> = {}
+) => resolveKey({ key: k, ctrlKey: false, metaKey: false, shiftKey: false, ...mods });
 
 describe('keymap', () => {
 	it('maps digits to frets', () => {
