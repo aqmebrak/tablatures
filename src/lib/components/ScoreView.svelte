@@ -2,17 +2,25 @@
 	import * as alphaTab from '@coderline/alphatab';
 	import { onMount } from 'svelte';
 
-	let { tex }: { tex: string } = $props();
+	let { score, revision }: { score: alphaTab.model.Score; revision: number } = $props();
 	let host: HTMLDivElement;
 	let api: alphaTab.AlphaTabApi | undefined;
 
 	onMount(() => {
 		api = new alphaTab.AlphaTabApi(host, {
-			core: { tex: true, fontDirectory: '/font/' },
+			core: { fontDirectory: '/font/' },
 			display: { staveProfile: 'ScoreTab' }
 		});
-		api.tex(tex);
+		api.renderScore(score, [0]);
 		return () => api?.destroy();
+	});
+
+	// alphaTab does not observe mutations to the score object graph; every
+	// command bumps `revision`, and this effect is what actually triggers a
+	// re-render in response (AGENTS.md rule #4).
+	$effect(() => {
+		void revision;
+		api?.renderScore(score, [0]);
 	});
 </script>
 
