@@ -150,9 +150,13 @@ Gotchas found the hard way:
 
 ## Gotchas
 
-- `AlphaTabApi` needs the first-party Vite plugin
-  (`@coderline/alphatab/vite`) to place the worker, worklet, soundfont and
-  Bravura font correctly. Do not hand-roll this wiring.
+- `AlphaTabApi` needs the first-party Vite plugin to place the worker,
+  worklet, soundfont and Bravura font correctly. Do not hand-roll this
+  wiring. **Use the `@coderline/alphatab-vite` package, not
+  `@coderline/alphatab/vite`** — in 1.8.4 the latter is a deprecated stub
+  that imports a relative path missing from the published tarball and
+  fails at import time (confirmed by direct probe). Install both packages
+  pinned to the same version.
 - The bundled soundfont is `sonivox.sf3` (954 KB) — a general-MIDI bank. Its
   distorted guitar is mediocre; that is expected and addressed by custom
   soundfont loading, not by fighting the synth.
