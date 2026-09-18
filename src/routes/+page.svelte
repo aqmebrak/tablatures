@@ -1,2 +1,7 @@
-<h1>Welcome to SvelteKit</h1>
-<p>Visit <a href="https://svelte.dev/docs/kit">svelte.dev/docs/kit</a> to read the documentation</p>
+<script lang="ts">
+	import ScoreView from '$lib/components/ScoreView.svelte';
+
+	const tex = `\\title "Untitled" \\tempo 180 . \\tuning e4 b3 g3 d3 a2 e2 . (0.6 0.5).8 3.6.8 5.6.16 | 7.6.4`;
+</script>
+
+<ScoreView {tex} />

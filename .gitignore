@@ -22,3 +22,13 @@ Thumbs.db
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# alphaTab assets (copied into static/ by the Vite plugin on dev/build start)
+/static/font
+/static/soundfont
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
