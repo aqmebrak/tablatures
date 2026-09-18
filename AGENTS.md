@@ -1,3 +1,11 @@
+## Project Configuration
+
+- **Language**: TypeScript
+- **Package Manager**: pnpm
+- **Add-ons**: none
+
+---
+
 # AGENTS.md — Tablatures
 
 Web-based tablature editor for metal, in the spirit of Guitar Pro.
