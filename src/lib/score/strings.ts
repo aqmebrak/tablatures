@@ -6,13 +6,13 @@
  * Everything converting between them lives here.
  */
 export function tuningIndexToStringNumber(tuningIndex: number, stringCount: number): number {
-  return stringCount - tuningIndex;
+	return stringCount - tuningIndex;
 }
 
 export function stringNumberToTuningIndex(stringNumber: number, stringCount: number): number {
-  return stringCount - stringNumber;
+	return stringCount - stringNumber;
 }
 
 export function midiForString(tunings: number[], stringNumber: number, fret: number): number {
-  return tunings[stringNumberToTuningIndex(stringNumber, tunings.length)] + fret;
+	return tunings[stringNumberToTuningIndex(stringNumber, tunings.length)] + fret;
 }
