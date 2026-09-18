@@ -13,8 +13,9 @@ async function freshApplyAction() {
 }
 
 function currentFret(editor: ReturnType<typeof createEditor>): number | undefined {
-	const beat = editor.score.tracks[0].staves[0].bars[0].voices[0].beats[0];
-	return beat.notes.find((n) => n.string === editor.cursor.stringNumber)?.fret;
+	const { barIndex, voiceIndex, beatIndex, stringNumber } = editor.cursor;
+	const beat = editor.score.tracks[0].staves[0].bars[barIndex].voices[voiceIndex].beats[beatIndex];
+	return beat.notes.find((n) => n.string === stringNumber)?.fret;
 }
 
 describe('dispatch multi-digit fret buffering', () => {
@@ -78,5 +79,52 @@ describe('dispatch multi-digit fret buffering', () => {
 		expect(editor.revision).toBe(before + 2); // revision bumps each run() call...
 		editor.undo();
 		expect(currentFret(editor)).toBeUndefined(); // ...but one undo clears both digits
+	});
+
+	it('does NOT coalesce fret edits made at different cursor positions (regression: undo granularity)', async () => {
+		const applyAction = await freshApplyAction();
+		// Two bars (one beat each) so ArrowRight actually moves the cursor to a
+		// distinct position — the default single-bar score has only one beat.
+		const editor = createEditor({ bars: 2 });
+
+		// Type a fret at the initial cursor position (bar 0, beat 0).
+		applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(5);
+
+		// Move the cursor to a different bar/beat.
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+
+		// Type a fret at the new cursor position.
+		applyAction(editor, { kind: 'fret', digit: 7 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(7);
+
+		// One undo should only revert the SECOND edit, not both.
+		expect(editor.canUndo).toBe(true);
+		editor.undo();
+		expect(currentFret(editor)).toBeUndefined(); // second beat's fret is gone
+
+		// Move back to the first beat to check its fret survived the first undo.
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: -1 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(5);
+
+		// A second undo is required to revert the first edit too.
+		expect(editor.canUndo).toBe(true);
+		editor.undo();
+		expect(currentFret(editor)).toBeUndefined();
+	});
+
+	it('resets the stale digit buffer on an intervening non-fret, non-move action', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor();
+
+		applyAction(editor, { kind: 'fret', digit: 3 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(3);
+
+		// An intervening action that is neither 'fret' nor 'move' must clear the buffer.
+		applyAction(editor, { kind: 'articulation', name: 'palmMute' } satisfies EditorAction);
+
+		// Within the buffering window, a fresh digit must NOT combine with the stale '3'.
+		applyAction(editor, { kind: 'fret', digit: 6 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(6);
 	});
 });

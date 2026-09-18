@@ -12,6 +12,10 @@ let pendingDigits = '';
 let pendingTimer: ReturnType<typeof setTimeout> | undefined;
 
 export function applyAction(editor: Editor, action: EditorAction): void {
+	if (action.kind !== 'fret') {
+		pendingDigits = '';
+		clearTimeout(pendingTimer);
+	}
 	switch (action.kind) {
 		case 'fret': {
 			clearTimeout(pendingTimer);
@@ -23,7 +27,9 @@ export function applyAction(editor: Editor, action: EditorAction): void {
 			// exceeds the max of 36) and must resolve immediately.
 			pendingDigits = candidate.length < 2 && Number(candidate) <= 3 ? candidate : '';
 			pendingTimer = setTimeout(() => (pendingDigits = ''), 700);
-			editor.run('fret', (ctx) => setFret(ctx, fret), { coalesceKey: 'fret' });
+			const { trackIndex, barIndex, voiceIndex, beatIndex, stringNumber } = editor.cursor;
+			const coalesceKey = `fret:${trackIndex}:${barIndex}:${voiceIndex}:${beatIndex}:${stringNumber}`;
+			editor.run('fret', (ctx) => setFret(ctx, fret), { coalesceKey });
 			break;
 		}
 		case 'move':
