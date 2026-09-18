@@ -14,18 +14,18 @@ export const METAL_PRESETS: Record<number, TuningPreset[]> = {
     { name: 'Drop D', tunings: [64, 59, 55, 50, 45, 38] },
     { name: 'D Standard', tunings: [62, 57, 53, 48, 43, 38] },
     { name: 'Drop C', tunings: [62, 57, 53, 48, 43, 36] },
-    { name: 'C# Standard', tunings: [63, 58, 54, 49, 44, 39] },
+    { name: 'C# Standard', tunings: [61, 56, 52, 47, 42, 37] },
     { name: 'Drop B', tunings: [61, 56, 52, 47, 42, 35] },
     { name: 'Drop A', tunings: [59, 54, 50, 45, 40, 33] }
   ],
   7: [
     { name: '7-String Standard', tunings: [64, 59, 55, 50, 45, 40, 35] },
-    { name: '7-String Drop A', tunings: [64, 59, 55, 50, 45, 38, 33] },
-    { name: '7-String Drop G', tunings: [62, 57, 53, 48, 43, 36, 31] }
+    { name: '7-String Drop A', tunings: [64, 59, 55, 50, 45, 40, 33] },
+    { name: '7-String Drop G', tunings: [62, 57, 53, 48, 43, 38, 31] }
   ],
   8: [
     { name: '8-String Standard', tunings: [64, 59, 55, 50, 45, 40, 35, 30] },
-    { name: '8-String Drop E', tunings: [64, 59, 55, 50, 45, 40, 33, 28] }
+    { name: '8-String Drop E', tunings: [64, 59, 55, 50, 45, 40, 35, 28] }
   ]
 };
 
