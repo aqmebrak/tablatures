@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as alphaTab from '@coderline/alphatab';
 	import { applyAction } from '$lib/editor/dispatch';
-	import { setDuration } from '$lib/score/commands/setDuration';
 	import type { NoteArticulation } from '$lib/score/commands/toggleArticulation';
 	import type { createEditor } from '$lib/score/editorStore.svelte';
 
@@ -34,7 +33,7 @@
 		}
 		const duration = DURATIONS[label];
 		if (duration === undefined) return; // '3' (triplets): no command yet
-		editor.run('duration', (ctx) => setDuration(ctx, duration));
+		applyAction(editor, { kind: 'setDuration', duration });
 	}
 
 	function pressArticulation(label: string) {

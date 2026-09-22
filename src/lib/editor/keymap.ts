@@ -1,3 +1,4 @@
+import type * as alphaTab from '@coderline/alphatab';
 import type { NoteArticulation } from '$lib/score/commands/toggleArticulation';
 
 export type EditorAction =
@@ -5,6 +6,7 @@ export type EditorAction =
 	| { kind: 'move'; axis: 'beat' | 'string'; delta: number }
 	| { kind: 'clear' }
 	| { kind: 'scaleDuration'; direction: 1 | -1 }
+	| { kind: 'setDuration'; duration: alphaTab.model.Duration }
 	| { kind: 'dotted' }
 	| { kind: 'articulation'; name: NoteArticulation }
 	| { kind: 'undo' }
