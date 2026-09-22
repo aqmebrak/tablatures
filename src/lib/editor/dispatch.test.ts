@@ -113,6 +113,75 @@ describe('dispatch multi-digit fret buffering', () => {
 		expect(currentFret(editor)).toBeUndefined();
 	});
 
+	it('coalesces a fast two-digit fret entry at the same position into one undo entry (regression: wasBuffering)', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor();
+
+		applyAction(editor, { kind: 'fret', digit: 1 } satisfies EditorAction);
+		applyAction(editor, { kind: 'fret', digit: 2 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(12);
+
+		// One undo clears the whole two-digit entry, back to nothing.
+		expect(editor.canUndo).toBe(true);
+		editor.undo();
+		expect(currentFret(editor)).toBeUndefined();
+		expect(editor.canUndo).toBe(false);
+	});
+
+	it('does NOT coalesce a fret edit at the same position after the cursor moves away and back (regression: stale History.lastCoalesceKey survives moves)', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor({ bars: 2 });
+
+		applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(5);
+
+		// Move away and all the way back to the exact same cursor position.
+		// 'move' never touches History, so a naive fix that keys coalescing
+		// purely off cursor position would still see the same key here and
+		// wrongly merge the next edit with this one.
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: -1 } satisfies EditorAction);
+
+		applyAction(editor, { kind: 'fret', digit: 9 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(9);
+
+		// First undo reverts only the second edit, restoring fret 5.
+		expect(editor.canUndo).toBe(true);
+		editor.undo();
+		expect(currentFret(editor)).toBe(5);
+
+		// A second undo is required to clear the first edit too.
+		expect(editor.canUndo).toBe(true);
+		editor.undo();
+		expect(currentFret(editor)).toBeUndefined();
+	});
+
+	it('does NOT coalesce a fret edit at the same position once the 700ms buffer window lapses', async () => {
+		vi.useFakeTimers();
+		try {
+			const applyAction = await freshApplyAction();
+			const editor = createEditor();
+
+			applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+			expect(currentFret(editor)).toBe(5);
+
+			vi.advanceTimersByTime(701);
+
+			applyAction(editor, { kind: 'fret', digit: 9 } satisfies EditorAction);
+			expect(currentFret(editor)).toBe(9);
+
+			expect(editor.canUndo).toBe(true);
+			editor.undo();
+			expect(currentFret(editor)).toBe(5);
+
+			expect(editor.canUndo).toBe(true);
+			editor.undo();
+			expect(currentFret(editor)).toBeUndefined();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it('resets the stale digit buffer on an intervening non-fret, non-move action', async () => {
 		const applyAction = await freshApplyAction();
 		const editor = createEditor();

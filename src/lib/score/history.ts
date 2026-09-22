@@ -54,4 +54,14 @@ export class History {
 		this.lastCoalesceKey = undefined;
 		return this.entries[this.index];
 	}
+
+	/**
+	 * Ends the current coalescing session without pushing a snapshot. Callers
+	 * that change editor state without going through `push` (e.g. cursor
+	 * movement) must call this so a later `push` with a coalesceKey that
+	 * happens to match the old one doesn't wrongly merge into it.
+	 */
+	breakCoalesce(): void {
+		this.lastCoalesceKey = undefined;
+	}
 }

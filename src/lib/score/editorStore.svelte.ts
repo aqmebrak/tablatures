@@ -76,6 +76,9 @@ export function createEditor(options: NewScoreOptions = {}) {
 		redo() {
 			const snapshot = history.redo();
 			if (snapshot) restore(snapshot.tex);
+		},
+		breakCoalesce() {
+			history.breakCoalesce();
 		}
 	};
 }
