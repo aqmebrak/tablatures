@@ -31,7 +31,7 @@ export function createEditor(options: NewScoreOptions = {}) {
 		const staff = score.tracks[cursor.trackIndex].staves[0];
 		return {
 			barCount: staff.bars.length,
-			beatsPerBar: (barIndex) => staff.bars[barIndex]?.voices[0]?.beats.length ?? 0,
+			beatsPerBar: (barIndex) => staff.bars[barIndex]?.voices[cursor.voiceIndex]?.beats.length ?? 0,
 			stringCount: staff.stringTuning.tunings.length
 		};
 	}
