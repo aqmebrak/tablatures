@@ -9,9 +9,26 @@
 	import { resolveKey } from '$lib/editor/keymap';
 	import { createEditor } from '$lib/score/editorStore.svelte';
 
-	const editor = createEditor();
+	// Phase 1 ships a fixed-length score: 8 bars gives arrow-key navigation
+	// and fret typing something real to move across out of the box. Inserting
+	// or removing beats/bars mid-editing (document structure editing) is
+	// Phase 2 scope, not a Phase 1 gap.
+	const editor = createEditor({ bars: 8 });
+
+	function isEditableTarget(target: EventTarget | null): boolean {
+		return (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLSelectElement ||
+			target instanceof HTMLTextAreaElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		);
+	}
 
 	function handleKeydown(event: KeyboardEvent) {
+		// Don't hijack keystrokes meant for a focused form control (e.g. the
+		// <select> elements in InstrumentInspector) — only intercept keys when
+		// the editor canvas itself has focus.
+		if (isEditableTarget(event.target)) return;
 		const action = resolveKey(event);
 		if (!action) return;
 		event.preventDefault();
@@ -25,7 +42,7 @@
 </script>
 
 <div class="flex h-screen flex-col bg-neutral-900 text-neutral-100">
-	<TransportBar />
+	<TransportBar {editor} />
 	<div class="flex min-h-0 flex-1">
 		<aside class="w-56 shrink-0 overflow-y-auto border-r border-neutral-800" data-testid="palette">
 			<NotationPalette {editor} />
@@ -37,7 +54,7 @@
 			class="w-72 shrink-0 overflow-y-auto border-l border-neutral-800"
 			data-testid="inspector"
 		>
-			<InstrumentInspector />
+			<InstrumentInspector {editor} />
 		</aside>
 	</div>
 	<footer class="h-32 shrink-0 overflow-y-auto border-t border-neutral-800" data-testid="tracks">
