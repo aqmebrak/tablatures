@@ -147,11 +147,22 @@ component, `+page.svelte` resolves the beat once and passes it down, OR
 `ScoreView` receives `cursor` directly and does its own tiny lookup. (Left
 to the implementation plan to pick the cleaner wiring — both are small.)
 
-After each render (`$effect` keyed on `revision` and the resolved beat),
-call `api.boundsLookup?.findBeat(beat)` → `BeatBounds.visualBounds` (a
-`Bounds` with x/y/w/h, canvas-relative). Position an absolutely-positioned
-overlay `<div>` inside `ScoreView`'s host container at those coordinates,
-sized to match, with a CSS pulse animation.
+After each layout (alphaTab's `postRenderFinished` event, not `renderFinished`,
+whose bounds are stale on resize) and on every cursor change, call
+`api.boundsLookup?.findBeats(beat)`. It returns one `BeatBounds` per rendered
+staff, top to bottom; `findBeat` would return only the first (the notation
+staff). `staveProfile` stays `'ScoreTab'`; the highlight targets the **tab
+staff**, chosen as the entry with the largest `visualBounds.y` (not by array
+order). The box spans that beat's column (x/w from `visualBounds`) and only the
+cursor's string row: if the tab `BeatBounds.notes` (needs
+`core.includeNoteBounds`) has a note with `note.string === cursor.stringNumber`
+use its `noteHeadBounds` y/h; otherwise interpolate from the tab bar:
+`spacing = barBounds.visualBounds.h / (stringCount - 1)`, row center =
+`bar.y + stringNumberToTuningIndex(string, stringCount) * spacing`, box =
+center +- spacing/2. (Verified empirically: no calibration constant needed.)
+This lives in the pure helper `src/lib/components/cursorGeometry.ts`. The
+overlay is an absolutely-positioned `<div>` with a CSS pulse animation
+(disabled under `prefers-reduced-motion`).
 
 ### Edge cases
 

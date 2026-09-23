@@ -3,6 +3,7 @@
 	import { onMount } from 'svelte';
 	import { resolveBeat } from '$lib/score/commands/types';
 	import type { Cursor } from '$lib/score/cursor';
+	import { cursorBox, pickTabBeatBounds } from './cursorGeometry';
 
 	let {
 		score,
@@ -25,18 +26,21 @@
 			highlightStyle = 'display: none;';
 			return;
 		}
-		const bounds = api.boundsLookup.findBeat(beat);
-		if (!bounds) {
+		// findBeats returns one entry per rendered staff; with ScoreTab the
+		// notation staff comes first and the TAB staff last. Highlight the tab.
+		const tab = pickTabBeatBounds(api.boundsLookup.findBeats(beat));
+		if (!tab) {
 			highlightStyle = 'display: none;';
 			return;
 		}
-		const { x, y, w, h } = bounds.visualBounds;
+		const stringCount = beat.voice.bar.staff.tuning.length;
+		const { x, y, w, h } = cursorBox(tab, cursor.stringNumber, stringCount);
 		highlightStyle = `left: ${x}px; top: ${y}px; width: ${w}px; height: ${h}px;`;
 	}
 
 	onMount(() => {
 		api = new alphaTab.AlphaTabApi(host, {
-			core: { fontDirectory: '/font/' },
+			core: { fontDirectory: '/font/', includeNoteBounds: true },
 			display: { staveProfile: 'ScoreTab' }
 		});
 		api.renderScore(score, [0]);
@@ -79,6 +83,12 @@
 		background: rgba(250, 204, 21, 0.35);
 		border: 2px solid rgba(250, 204, 21, 0.9);
 		animation: cursor-pulse 1s ease-in-out infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cursor-highlight {
+			animation: none;
+		}
 	}
 
 	@keyframes cursor-pulse {

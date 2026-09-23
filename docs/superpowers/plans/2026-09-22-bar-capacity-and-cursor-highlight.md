@@ -449,7 +449,7 @@ git commit -m "test: e2e coverage for bar-capacity beat insertion"
 - Modify: `src/routes/+page.svelte`
 
 **Interfaces:**
-- Consumes: `resolveBeat` from `src/lib/score/commands/types.ts`, `Cursor` from `src/lib/score/cursor.ts`, alphaTab's `api.boundsLookup.findBeat(beat)` → `BeatBounds.visualBounds` (`{x, y, w, h}`), `api.renderFinished` event
+- Consumes: `resolveBeat` from `src/lib/score/commands/types.ts`, `Cursor` from `src/lib/score/cursor.ts`, alphaTab's `api.boundsLookup.findBeats(beat)` (pick the tab staff = largest `visualBounds.y`; narrow to the cursor's string row via `cursorGeometry.ts`), `api.postRenderFinished` event (superseded by the fix round: the code below is the original draft; see the design spec Part 2)
 - Produces: `ScoreView` now requires a `cursor: Cursor` prop in addition to `score`/`revision`; a `data-testid="cursor-highlight"` element in the DOM for Task 6's e2e test
 
 - [ ] **Step 1: Implement `ScoreView.svelte`**
@@ -591,6 +591,8 @@ git commit -m "feat: animated cursor highlight overlay"
 ---
 
 ### Task 6: e2e proof the highlight moves
+
+> Addendum: the test must also assert the highlight's vertical range overlaps the typed fret number's SVG `<text>` node on the tab staff (not the notation staff).
 
 **Files:**
 - Modify: `e2e/editing.spec.ts`
