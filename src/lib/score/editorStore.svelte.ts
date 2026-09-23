@@ -63,11 +63,20 @@ export function createEditor(options: NewScoreOptions = {}) {
 			return canRedo;
 		},
 		shape,
-		run(label: string, fn: (ctx: CommandContext) => void, opts: { coalesceKey?: string } = {}) {
-			fn({ score, settings, cursor });
-			history.push({ tex: toAlphaTex(score, settings), label }, opts);
-			revision++;
-			syncHistoryFlags();
+		run<T = void>(
+			label: string,
+			fn: (ctx: CommandContext) => T,
+			opts: { coalesceKey?: string } = {}
+		): T {
+			const before = toAlphaTex(score, settings);
+			const result = fn({ score, settings, cursor });
+			const after = toAlphaTex(score, settings);
+			if (after !== before) {
+				history.push({ tex: after, label }, opts);
+				revision++;
+				syncHistoryFlags();
+			}
+			return result;
 		},
 		undo() {
 			const snapshot = history.undo();

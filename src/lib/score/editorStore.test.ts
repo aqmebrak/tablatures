@@ -39,4 +39,20 @@ describe('editor store', () => {
 		expect(editor.shape().barCount).toBe(3);
 		expect(editor.shape().stringCount).toBe(7);
 	});
+
+	it('returns the value produced by the command', () => {
+		const editor = createEditor();
+		const result = editor.run('compute', () => 42);
+		expect(result).toBe(42);
+	});
+
+	it('does not record history when the command makes no actual change', () => {
+		const editor = createEditor();
+		const before = editor.revision;
+
+		editor.run('noop', () => {});
+
+		expect(editor.revision).toBe(before);
+		expect(editor.canUndo).toBe(false);
+	});
 });
