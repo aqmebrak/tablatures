@@ -1,0 +1,15 @@
+# Package managers
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Build output
+.svelte-kit
+.vercel
+.output
+build
+
+# Project planning docs (predate this task, not app source)
+.superpowers
+docs
+AGENTS.md
