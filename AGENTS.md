@@ -53,10 +53,15 @@ src/lib/
     history.ts      snapshot stack, coalescing, depth cap
     cursor.ts       cursor position + pure keyboard navigation
     commands/       ONE FILE PER COMMAND — the only code that mutates a Score
+                    (incl. advanceOrInsertBeat.ts: ArrowRight beat/bar advance)
+  editor/
+    keymap.ts       key -> action
+    dispatch.ts     action -> editor.run / cursor
   player/           alphaSynth wiring, transport state
   storage/          ScoreStore interface + IndexedDB implementation
   components/
     ScoreView.svelte  mounts AlphaTabApi, owns re-render
+    cursorGeometry.ts pure geometry for the cursor highlight
     panels/           NotationPalette, InstrumentInspector, TrackList
     transport/        playback controls
 ```

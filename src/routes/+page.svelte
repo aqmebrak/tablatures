@@ -10,9 +10,9 @@
 	import { createEditor } from '$lib/score/editorStore.svelte';
 
 	// Phase 1 ships a fixed-length score: 8 bars gives arrow-key navigation
-	// and fret typing something real to move across out of the box. Inserting
-	// or removing beats/bars mid-editing (document structure editing) is
-	// Phase 2 scope, not a Phase 1 gap.
+	// and fret typing something real to move across out of the box. Beats
+	// within a bar insert automatically via ArrowRight; adding or removing
+	// whole bars (document structure editing) is Phase 2 scope.
 	const editor = createEditor({ bars: 8 });
 
 	function isEditableTarget(target: EventTarget | null): boolean {

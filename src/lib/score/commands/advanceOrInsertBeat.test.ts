@@ -1,3 +1,4 @@
+import * as alphaTab from '@coderline/alphatab';
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, fromAlphaTex } from '../serialize';
 import { advanceOrInsertBeat } from './advanceOrInsertBeat';
@@ -56,6 +57,7 @@ describe('advanceOrInsertBeat', () => {
 		const cursor = advanceOrInsertBeat(ctx);
 
 		expect(beatsIn(ctx, 0).length).toBe(before); // no mutation to the full bar
+		expect(beatsIn(ctx, 1).length).toBe(1);
 		expect(cursor).toEqual({
 			trackIndex: 0,
 			barIndex: 1,
@@ -80,5 +82,44 @@ describe('advanceOrInsertBeat', () => {
 		const ctx = ctxFor('\\tuning e4 b3 g3 d3 a2 e2 . 0.6.4 | r.1');
 		advanceOrInsertBeat(ctx);
 		expect(() => beatsIn(ctx, 0)[1].notes).not.toThrow();
+	});
+
+	it('gives an untouched next bar the current duration (quarters -> quarter)', () => {
+		const ctx = ctxFor('\\tuning e4 b3 g3 d3 a2 e2 . 0.6.4 0.6.4 0.6.4 0.6.4 | r.1', 3, 0);
+
+		const cursor = advanceOrInsertBeat(ctx);
+
+		expect(beatsIn(ctx, 1).length).toBe(1);
+		expect(beatsIn(ctx, 1)[0].duration).toBe(alphaTab.model.Duration.Quarter);
+		expect(cursor.barIndex).toBe(1);
+		expect(cursor.beatIndex).toBe(0);
+	});
+
+	it('gives an untouched next bar a 16th after a full bar of 16ths', () => {
+		const sixteen = Array(16).fill('0.6.16').join(' ');
+		const ctx = ctxFor(`\\tuning e4 b3 g3 d3 a2 e2 . ${sixteen} | r.1`, 15, 0);
+
+		advanceOrInsertBeat(ctx);
+
+		expect(beatsIn(ctx, 1)[0].duration).toBe(alphaTab.model.Duration.Sixteenth);
+	});
+
+	it('does not modify a next bar that already has a note', () => {
+		const ctx = ctxFor('\\tuning e4 b3 g3 d3 a2 e2 . 0.6.4 0.6.4 0.6.4 0.6.4 | 0.6.1', 3, 0);
+
+		advanceOrInsertBeat(ctx);
+
+		expect(beatsIn(ctx, 1).length).toBe(1);
+		expect(beatsIn(ctx, 1)[0].duration).toBe(alphaTab.model.Duration.Whole);
+		expect(beatsIn(ctx, 1)[0].notes.length).toBe(1);
+	});
+
+	it('does not modify a next bar that already has two beats', () => {
+		const ctx = ctxFor('\\tuning e4 b3 g3 d3 a2 e2 . 0.6.4 0.6.4 0.6.4 0.6.4 | r.2 r.2', 3, 0);
+
+		advanceOrInsertBeat(ctx);
+
+		expect(beatsIn(ctx, 1).length).toBe(2);
+		expect(beatsIn(ctx, 1)[0].duration).toBe(alphaTab.model.Duration.Half);
 	});
 });

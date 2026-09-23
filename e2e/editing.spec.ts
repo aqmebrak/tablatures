@@ -94,6 +94,40 @@ test('two eighth notes fill the current bar: ArrowRight inserts a beat instead o
 	expect(gap).toBeLessThan(44);
 });
 
+test('the eighth-note duration carries into the next bar', async ({ page }) => {
+	await page.goto('/');
+	const scoreView = page.getByTestId('score-view');
+	await expect(scoreView.locator('svg').first()).toBeVisible({ timeout: 15_000 });
+
+	await page.getByRole('button', { name: '8', exact: true }).click();
+	// Fill bar 1 with eight eighths (frets 9), landing on bar 2.
+	for (let i = 0; i < 8; i++) {
+		await page.keyboard.press('9');
+		await page.keyboard.press('ArrowRight');
+	}
+	// Bar 2: two frets that must sit one eighth apart, not jump to bar 3.
+	await page.keyboard.press('8');
+	await page.keyboard.press('ArrowRight');
+	await page.keyboard.press('0');
+
+	const eight = scoreView.locator('svg text', { hasText: /^8$/ });
+	const zero = scoreView.locator('svg text', { hasText: /^0$/ });
+	await expect(eight).toHaveCount(1);
+	await expect(zero).toHaveCount(1);
+
+	const a = await eight.boundingBox();
+	const b = await zero.boundingBox();
+	expect(a).not.toBeNull();
+	expect(b).not.toBeNull();
+
+	// Measured gap: 31.0px with the fix; 72.2px without it (next bar's whole
+	// note fills the bar, so ArrowRight jumps to bar 3). 50 is the margin.
+	expect(Math.abs(b!.y - a!.y)).toBeLessThan(2);
+	const gap = b!.x - a!.x;
+	expect(gap).toBeGreaterThan(0);
+	expect(gap).toBeLessThan(50);
+});
+
 test.describe('cursor highlight geometry (pins tab-staff placement)', () => {
 	// Measured tolerance for |highlight centre - fret text centre| is logged in
 	// the task report; 4px is well under the ~110px offset of the notation staff.
@@ -172,13 +206,21 @@ test.describe('cursor highlight geometry (pins tab-staff placement)', () => {
 		await load(page);
 		const highlight = page.getByTestId('cursor-highlight');
 		await expect(highlight).toBeVisible();
-		const before = await box(highlight);
+		// Let the initial placement settle before sampling the baseline.
+		let before: Box = await box(highlight);
+		await expect(async () => {
+			const b = await box(highlight);
+			expect(b.x).toBe(before.x);
+			expect(b.y).toBe(before.y);
+			before = b;
+		}).toPass({ timeout: 3000 });
 
 		await page.keyboard.press('ArrowRight');
 
 		await expect(async () => {
 			const after = await box(highlight);
-			expect(after.x !== before.x || after.y !== before.y).toBe(true);
+			expect(after.x - before.x).toBeGreaterThan(10);
+			expect(Math.abs(after.y - before.y)).toBeLessThan(4);
 		}).toPass({ timeout: 3000 });
 	});
 });

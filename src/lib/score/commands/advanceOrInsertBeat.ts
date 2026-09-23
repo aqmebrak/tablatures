@@ -7,10 +7,12 @@ import type { CommandContext } from './types';
  *  - if a beat already exists at beatIndex + 1, just move onto it (no mutation)
  *  - else if the current bar still has time-signature capacity left, insert a
  *    new rest beat (inheriting the current beat's duration) and move onto it
- *  - else if a next bar exists, move to its first beat
+ *  - else if a next bar exists, move to its first beat; if that bar is
+ *    untouched (a single beat with no notes) it first adopts the current
+ *    beat's duration, so the duration carries across bars as in Guitar Pro
  *  - else (end of the document), the cursor is unchanged
  *
- * Never mutates unless it inserts a beat. `editorStore.run()` only records
+ * Never mutates unless it inserts a beat or retimes an untouched next bar. `editorStore.run()` only records
  * an undo entry when the resulting score text actually differs (see Task 2),
  * so the pure-navigation and end-of-document cases here never create undo
  * noise even though every caller routes through `run()` uniformly.
@@ -40,6 +42,13 @@ export function advanceOrInsertBeat(ctx: CommandContext): Cursor {
 	}
 
 	if (cursor.barIndex + 1 < staff.bars.length) {
+		const nextVoice = staff.bars[cursor.barIndex + 1].voices[cursor.voiceIndex];
+		if (nextVoice.beats.length === 1 && nextVoice.beats[0].notes.length === 0) {
+			// Duration only, not dots: inserted beats don't copy dots either, and
+			// copying a dot could overflow the bar.
+			nextVoice.beats[0].duration = currentBeat.duration;
+			score.finish(settings);
+		}
 		return { ...cursor, barIndex: cursor.barIndex + 1, beatIndex: 0 };
 	}
 

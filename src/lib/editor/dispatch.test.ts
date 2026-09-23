@@ -249,4 +249,36 @@ describe('dispatch multi-digit fret buffering', () => {
 		expect(fretAt(0, string)).toBe(5);
 		expect(fretAt(1, string)).toBe(7);
 	});
+
+	it('the next bar inherits the current duration, so typing there keeps inserting beats in-bar', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor({ bars: 2 });
+		const beatsOf = (bar: number) => editor.score.tracks[0].staves[0].bars[bar].voices[0].beats;
+
+		applyAction(editor, {
+			kind: 'setDuration',
+			duration: alphaTab.model.Duration.Eighth
+		} satisfies EditorAction);
+		for (let i = 0; i < 8; i++) {
+			applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+			applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+		}
+		expect(beatsOf(0).length).toBe(8);
+		expect(editor.cursor.barIndex).toBe(1);
+		expect(editor.cursor.beatIndex).toBe(0);
+		expect(beatsOf(1)[0].duration).toBe(alphaTab.model.Duration.Eighth);
+
+		applyAction(editor, { kind: 'fret', digit: 7 } satisfies EditorAction);
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+		expect(beatsOf(1).length).toBe(2);
+		expect(editor.cursor.barIndex).toBe(1);
+		expect(editor.cursor.beatIndex).toBe(1);
+
+		expect(() => {
+			editor.undo();
+			editor.undo();
+			editor.undo();
+		}).not.toThrow();
+		expect(editor.score.tracks[0].staves[0].bars.length).toBe(2);
+	});
 });
