@@ -48,7 +48,7 @@
 			<NotationPalette {editor} />
 		</aside>
 		<main class="min-w-0 flex-1 overflow-auto bg-neutral-100" data-testid="score-pane">
-			<ScoreView score={editor.score} revision={editor.revision} />
+			<ScoreView score={editor.score} revision={editor.revision} cursor={editor.cursor} />
 		</main>
 		<aside
 			class="w-72 shrink-0 overflow-y-auto border-l border-neutral-800"
