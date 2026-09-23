@@ -1,3 +1,4 @@
+import { advanceOrInsertBeat } from '$lib/score/commands/advanceOrInsertBeat';
 import { clearNote } from '$lib/score/commands/clearNote';
 import { scaleDuration, setDuration, toggleDotted } from '$lib/score/commands/setDuration';
 import { setFret } from '$lib/score/commands/setFret';
@@ -64,16 +65,26 @@ export function applyAction(editor: Editor, action: EditorAction): void {
 		}
 		case 'move':
 			resetDigitBuffer();
-			// 'move' never pushes to history, so without this History's
+			// 'move' never pushes to history (except the forward-beat case just
+			// below, which routes through run()), so without this History's
 			// coalescing key would keep pointing at the position we're leaving —
 			// letting a later fret edit at the same position wrongly merge with
 			// one made before this move (see the 'fret' case's own guard, which
 			// also covers the case where the buffer simply times out).
 			editor.breakCoalesce();
-			editor.cursor =
-				action.axis === 'beat'
-					? moveBeat(editor.cursor, action.delta, editor.shape())
-					: moveString(editor.cursor, action.delta, editor.shape());
+			if (action.axis === 'beat' && action.delta > 0) {
+				// Forward beat movement may need to insert a new beat (bar not
+				// yet full) or advance into the next bar — decided by the
+				// command, never by pure cursor arithmetic. action.delta is
+				// always 1 here (see keymap.ts); advanceOrInsertBeat only ever
+				// moves one slot at a time.
+				editor.cursor = editor.run('advance', (ctx) => advanceOrInsertBeat(ctx));
+			} else {
+				editor.cursor =
+					action.axis === 'beat'
+						? moveBeat(editor.cursor, action.delta, editor.shape())
+						: moveString(editor.cursor, action.delta, editor.shape());
+			}
 			break;
 		case 'clear':
 			editor.run('clear note', clearNote);

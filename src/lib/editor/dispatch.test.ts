@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as alphaTab from '@coderline/alphatab';
 import { createEditor } from '$lib/score/editorStore.svelte';
 import type { EditorAction } from './keymap';
 
@@ -195,5 +196,57 @@ describe('dispatch multi-digit fret buffering', () => {
 		// Within the buffering window, a fresh digit must NOT combine with the stale '3'.
 		applyAction(editor, { kind: 'fret', digit: 6 } satisfies EditorAction);
 		expect(currentFret(editor)).toBe(6);
+	});
+
+	it('ArrowRight inserts a new beat within the bar when a shorter duration leaves capacity (regression: bars could only ever hold one beat)', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor(); // single bar, one whole-rest beat by default
+
+		// Shrink the current beat to an eighth note, leaving most of the bar's capacity unused.
+		applyAction(editor, {
+			kind: 'setDuration',
+			duration: alphaTab.model.Duration.Eighth
+		} satisfies EditorAction);
+		applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+
+		const barBeatsBefore = editor.score.tracks[0].staves[0].bars[0].voices[0].beats.length;
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+		const barBeatsAfter = editor.score.tracks[0].staves[0].bars[0].voices[0].beats.length;
+
+		expect(barBeatsAfter).toBe(barBeatsBefore + 1); // a new beat was inserted, still in bar 0
+		expect(editor.cursor.barIndex).toBe(0);
+		expect(editor.cursor.beatIndex).toBe(1);
+
+		applyAction(editor, { kind: 'fret', digit: 7 } satisfies EditorAction);
+		expect(currentFret(editor)).toBe(7);
+	});
+
+	it('an inserted beat survives the undo/redo alphaTex round trip', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor();
+		const beats = () => editor.score.tracks[0].staves[0].bars[0].voices[0].beats;
+		const fretAt = (i: number, string: number) =>
+			beats()[i]?.notes.find((n) => n.string === string)?.fret;
+
+		applyAction(editor, {
+			kind: 'setDuration',
+			duration: alphaTab.model.Duration.Eighth
+		} satisfies EditorAction);
+		applyAction(editor, { kind: 'fret', digit: 5 } satisfies EditorAction);
+		const string = editor.cursor.stringNumber;
+		applyAction(editor, { kind: 'move', axis: 'beat', delta: 1 } satisfies EditorAction);
+		applyAction(editor, { kind: 'fret', digit: 7 } satisfies EditorAction);
+		expect(beats().length).toBe(2);
+
+		// Undo the second fret: inserted (empty) beat must remain, fret 5 intact.
+		editor.undo();
+		expect(beats().length).toBe(2);
+		expect(fretAt(0, string)).toBe(5);
+		expect(fretAt(1, string)).toBeUndefined();
+
+		editor.redo();
+		expect(beats().length).toBe(2);
+		expect(fretAt(0, string)).toBe(5);
+		expect(fretAt(1, string)).toBe(7);
 	});
 });
