@@ -29,4 +29,13 @@ describe('createScore', () => {
 		expect(back.title).toBe('Roundtrip');
 		expect(back.masterBars.length).toBe(2);
 	});
+
+	it('names the default track Guitar with a distortion sound, on the track and its first beat', () => {
+		const score = createScore();
+		const track = score.tracks[0];
+		expect(track.name).toBe('Guitar');
+		expect(track.playbackInfo.program).toBe(30);
+		const automations = track.staves[0].bars[0].voices[0].beats[0].automations;
+		expect(automations.filter((a) => a.type === 2).map((a) => a.value)).toEqual([30]);
+	});
 });
