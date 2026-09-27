@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { clampCursor, moveBeat, moveString, type Cursor, type ScoreShape } from './cursor';
 
-const shape: ScoreShape = { barCount: 3, beatsPerBar: () => 4, stringCount: 6 };
+const shape: ScoreShape = { barCount: 3, beatsPerBar: () => 4, stringCount: 6, trackCount: 1 };
 const at = (barIndex: number, beatIndex: number, stringNumber = 6): Cursor => ({
 	trackIndex: 0,
 	voiceIndex: 0,
@@ -47,5 +47,11 @@ describe('cursor navigation', () => {
 		expect(clamped.barIndex).toBe(2);
 		expect(clamped.beatIndex).toBe(3);
 		expect(clamped.stringNumber).toBe(6);
+	});
+
+	it('clamps the track index to the existing tracks', () => {
+		const twoTracks: ScoreShape = { ...shape, trackCount: 2 };
+		expect(clampCursor({ ...at(0, 0), trackIndex: 5 }, twoTracks).trackIndex).toBe(1);
+		expect(clampCursor({ ...at(0, 0), trackIndex: -1 }, twoTracks).trackIndex).toBe(0);
 	});
 });
