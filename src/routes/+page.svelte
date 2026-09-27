@@ -57,6 +57,6 @@
 		</aside>
 	</div>
 	<footer class="h-32 shrink-0 overflow-y-auto border-t border-neutral-800" data-testid="tracks">
-		<TrackList />
+		<TrackList {editor} />
 	</footer>
 </div>
