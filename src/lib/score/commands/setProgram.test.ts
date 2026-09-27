@@ -1,3 +1,4 @@
+import * as alphaTab from '@coderline/alphatab';
 import { describe, expect, it } from 'vitest';
 import { defaultSettings, fromAlphaTex, toAlphaTex } from '../serialize';
 import { setProgram } from './setProgram';
@@ -7,10 +8,9 @@ const ctxFor = () => ({
 	settings: defaultSettings(),
 	cursor: { trackIndex: 0, barIndex: 0, voiceIndex: 0, beatIndex: 0, stringNumber: 1 }
 });
-const INSTRUMENT = 2; // alphaTab.model.AutomationType.Instrument
 const firstBeatPrograms = (score: ReturnType<typeof fromAlphaTex>) =>
 	score.tracks[0].staves[0].bars[0].voices[0].beats[0].automations
-		.filter((a) => a.type === INSTRUMENT)
+		.filter((a) => a.type === alphaTab.model.AutomationType.Instrument)
 		.map((a) => a.value);
 
 describe('setProgram', () => {

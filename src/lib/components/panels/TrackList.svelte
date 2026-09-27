@@ -22,17 +22,29 @@
 		return canAddTrack(editor.score);
 	});
 
+	/** Give the keyboard back to the tab editor after a panel interaction. */
+	function release(target: EventTarget | null) {
+		(target as HTMLElement | null)?.blur();
+	}
+
 	function add(family: InstrumentFamily) {
 		const index = editor.run('add track', (ctx) => addTrack(ctx, family));
 		if (index !== undefined) editor.selectTrack(index);
 	}
 
-	function remove(trackIndex: number) {
+	function select(event: Event, i: number) {
+		editor.selectTrack(i);
+		release(event.currentTarget);
+	}
+
+	function remove(event: Event, trackIndex: number) {
 		const selected = editor.cursor.trackIndex;
-		if (!editor.run('remove track', (ctx) => removeTrack(ctx, trackIndex))) return;
-		if (trackIndex < selected) editor.selectTrack(selected - 1);
-		else if (trackIndex === selected)
-			editor.selectTrack(Math.min(selected, editor.score.tracks.length - 1));
+		if (editor.run('remove track', (ctx) => removeTrack(ctx, trackIndex))) {
+			if (trackIndex < selected) editor.selectTrack(selected - 1);
+			else if (trackIndex === selected)
+				editor.selectTrack(Math.min(selected, editor.score.tracks.length - 1));
+		}
+		release(event.currentTarget);
 	}
 </script>
 
@@ -43,7 +55,7 @@
 				class="rounded-l px-3 py-1.5 text-xs font-medium {i === editor.cursor.trackIndex
 					? 'bg-neutral-700 text-neutral-100'
 					: 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700 hover:text-neutral-100'}"
-				onclick={() => editor.selectTrack(i)}
+				onclick={(e) => select(e, i)}
 			>
 				{track.name} — {FAMILY_LABEL[track.family]}
 			</button>
@@ -51,7 +63,7 @@
 				<button
 					class="rounded-r bg-neutral-800 px-2 py-1.5 text-xs text-neutral-500 hover:bg-red-900 hover:text-neutral-100"
 					aria-label="Remove {track.name}"
-					onclick={() => remove(i)}>×</button
+					onclick={(e) => remove(e, i)}>×</button
 				>
 			{/if}
 		</div>

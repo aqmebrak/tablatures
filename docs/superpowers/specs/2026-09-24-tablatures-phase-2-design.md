@@ -286,8 +286,9 @@ remaining bar.
 - `structure.ts`: the relink helpers keep indexes and pointers consistent
   after a splice.
 - `instruments.ts`: `familyOf` and the defaults.
-- `addTrack`: the bar count matches the master bars, channels are unique and
-  skip 9, it round-trips, and it refuses at the cap.
+- `addTrack`: the bar count matches the master bars, channels follow the
+  importer rule (track i → 2i, 2i+1), it round-trips, and it refuses at the
+  cap.
 - `removeTrack`: the remaining indexes are consistent, and it refuses the
   last track.
 - `renameTrack`: the trimmed name is set, and an empty name is refused.

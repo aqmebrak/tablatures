@@ -28,6 +28,11 @@
 		// <select> elements in InstrumentInspector) — only intercept keys when
 		// the editor canvas itself has focus.
 		if (isEditableTarget(event.target)) return;
+		// Don't hijack keystrokes meant for an open bits-ui menu (e.g. the "+
+		// Add track" dropdown): arrow keys and typeahead letters/digits are
+		// consumed by the menu itself.
+		if (event.defaultPrevented) return;
+		if ((event.target as Element | null)?.closest?.('[role="menu"]')) return;
 		const action = resolveKey(event);
 		if (!action) return;
 		event.preventDefault();

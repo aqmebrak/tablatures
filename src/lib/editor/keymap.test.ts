@@ -44,6 +44,7 @@ describe('keymap', () => {
 		expect(key('Insert', { ctrlKey: true })).toEqual({ kind: 'insertBar' });
 		expect(key('Insert', { metaKey: true })).toEqual({ kind: 'insertBar' });
 		expect(key('Delete', { ctrlKey: true })).toEqual({ kind: 'deleteBar' });
+		expect(key('Delete', { metaKey: true })).toEqual({ kind: 'deleteBar' });
 		expect(key('Delete')).toEqual({ kind: 'clear' }); // plain Delete still clears a note
 	});
 });

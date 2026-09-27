@@ -115,8 +115,9 @@ export function applyAction(editor: Editor, action: EditorAction): void {
 			break;
 		}
 		case 'deleteBar':
-			editor.run('delete bar', deleteBar);
-			editor.cursor = clampCursor({ ...editor.cursor, beatIndex: 0 }, editor.shape());
+			if (editor.run('delete bar', deleteBar)) {
+				editor.cursor = clampCursor({ ...editor.cursor, beatIndex: 0 }, editor.shape());
+			}
 			break;
 	}
 }

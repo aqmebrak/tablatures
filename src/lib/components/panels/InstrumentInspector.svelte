@@ -36,11 +36,26 @@
 
 	let notice = $state('');
 	let noticeTimer: ReturnType<typeof setTimeout> | undefined;
+	// Remembered so the notice can be cleared as soon as either moves on from
+	// the moment it was shown (e.g. Ctrl+Z undoing the removal, or switching
+	// to another track) — otherwise it lingers, describing a state that no
+	// longer applies.
+	let noticeRevision = -1;
+	let noticeTrackIndex = -1;
 	function showNotice(text: string) {
 		notice = text;
+		noticeRevision = editor.revision;
+		noticeTrackIndex = info.trackIndex;
 		clearTimeout(noticeTimer);
 		noticeTimer = setTimeout(() => (notice = ''), 4000);
 	}
+
+	$effect(() => {
+		if (notice && (editor.revision !== noticeRevision || info.trackIndex !== noticeTrackIndex)) {
+			notice = '';
+			clearTimeout(noticeTimer);
+		}
+	});
 
 	/** Give the keyboard back to the tab editor after a panel interaction. */
 	function release(target: EventTarget | null) {

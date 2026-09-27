@@ -79,6 +79,36 @@ test('inspector: 7 strings keeps a typed note, presets and steppers retune', asy
 	await expect(nine).toHaveCount(1); // low E note kept
 	await page.keyboard.press('Control+z');
 	await expect(zero).toHaveCount(1);
+	// The "notes removed" notice describes a state that undo just reverted;
+	// it must not linger describing something that's no longer true.
+	await expect(inspector.getByRole('status')).toHaveCount(0);
+});
+
+test('keystrokes while the "+ Add track" menu is open do not reach the tab (regression: menu key leak)', async ({
+	page
+}) => {
+	const scoreView = await load(page);
+	const tracks = page.getByTestId('tracks');
+	const nine = scoreView.locator('svg text', { hasText: /^9$/ });
+
+	await tracks.getByRole('button', { name: '+ Add track' }).click();
+	await expect(page.getByRole('menu')).toBeVisible();
+
+	// Arrow keys move the menu's highlighted item, not the tab cursor; '9' is
+	// menu typeahead, not a fret digit.
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('9');
+
+	// Rendering after a keystroke is asynchronous, so a bare toHaveCount(0)
+	// checked immediately would trivially pass before a leaked edit had any
+	// chance to render (Playwright's expect only polls while the assertion is
+	// still failing). Wait past the render pipeline's latency — well under a
+	// second, observed directly — before asserting the note is absent.
+	await page.waitForTimeout(1000);
+	await expect(nine).toHaveCount(0);
+
+	await page.keyboard.press('Escape');
+	await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
 test('inspector: rename and change sound', async ({ page }) => {

@@ -311,10 +311,14 @@ describe('dispatch bar actions', () => {
 	it('deleteBar on the only bar changes nothing and records no undo', async () => {
 		const applyAction = await freshApplyAction();
 		const editor = createEditor({ bars: 1 });
+		editor.cursor = { ...editor.cursor, beatIndex: 1 };
+		const cursorBefore = { ...editor.cursor };
 
 		applyAction(editor, { kind: 'deleteBar' });
 
 		expect(editor.score.masterBars.length).toBe(1);
 		expect(editor.canUndo).toBe(false);
+		// A refused delete must leave the cursor untouched, not reset beatIndex.
+		expect(editor.cursor).toEqual(cursorBefore);
 	});
 });
