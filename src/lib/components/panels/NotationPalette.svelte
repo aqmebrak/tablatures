@@ -41,6 +41,13 @@
 		if (!name) return; // Slide/Bend/Tremolo: no matching NoteArticulation yet
 		applyAction(editor, { kind: 'articulation', name });
 	}
+
+	// The score is mutated in place (same reference); reading revision makes
+	// this re-derive after every command.
+	const barCount = $derived.by(() => {
+		void editor.revision;
+		return editor.score.masterBars.length;
+	});
 </script>
 
 <section class="p-3">
@@ -64,5 +71,20 @@
 				onclick={() => pressArticulation(label)}>{label}</button
 			>
 		{/each}
+	</div>
+
+	<h2 class="mt-4 mb-2 text-xs font-semibold tracking-wide text-neutral-400 uppercase">Bar</h2>
+	<div class="grid grid-cols-2 gap-1">
+		<button
+			class="rounded bg-neutral-800 px-2 py-1 text-xs hover:bg-neutral-700"
+			title="Ctrl+Insert"
+			onclick={() => applyAction(editor, { kind: 'insertBar' })}>Insert bar</button
+		>
+		<button
+			class="rounded bg-neutral-800 px-2 py-1 text-xs hover:bg-neutral-700 disabled:opacity-40"
+			title="Ctrl+Delete"
+			disabled={barCount <= 1}
+			onclick={() => applyAction(editor, { kind: 'deleteBar' })}>Delete bar</button
+		>
 	</div>
 </section>
