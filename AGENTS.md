@@ -49,11 +49,13 @@ src/lib/
     document.ts     create/describe a ScoreDoc
     strings.ts      string-numbering conversions  ← read the footgun below
     tuning.ts       presets + custom tunings + metal catalogue
+    instruments.ts  curated MIDI programs, family, track defaults, MAX_TRACKS
     serialize.ts    toAlphaTex / fromAlphaTex
     history.ts      snapshot stack, coalescing, depth cap
     cursor.ts       cursor position + pure keyboard navigation
     commands/       ONE FILE PER COMMAND — the only code that mutates a Score
                     (incl. advanceOrInsertBeat.ts: ArrowRight beat/bar advance)
+                    (structure.ts: shared relink/insert/remove helpers — not a command)
   editor/
     keymap.ts       key -> action
     dispatch.ts     action -> editor.run / cursor
@@ -167,3 +169,17 @@ Gotchas found the hard way:
   soundfont loading, not by fighting the synth.
 - Audio requires a user gesture before it will start (browser autoplay
   policy). The transport must handle "not yet unlocked".
+- **A track's MIDI program is stored twice**: `track.playbackInfo.program`
+  and an `Instrument` automation on the track's first beat (which playback
+  obeys). Change both — `commands/setProgram.ts` does.
+- **Changing a staff's string count must renumber notes.** `note.string`
+  counts from the lowest string, so adding k low strings means
+  `note.string += k` or every note silently moves down k strings.
+  `commands/setStringCount.ts` owns this.
+- **`Tuning.initialize()` appends duplicates on every call.** Always go
+  through `ensureTuningsInitialized()` / `presetsFor()` in `tuning.ts`.
+- **Structural edits (bars, tracks) splice arrays**, so relink afterwards
+  with `commands/structure.ts`. Deleting bar 0 must hand its tempo
+  automation to the new first bar (the score tempo lives there).
+- **UI `$derived` over score data must read `editor.revision`.** Commands
+  mutate the score in place; its reference only changes on undo/redo.
