@@ -83,6 +83,20 @@ belong together.
 6. **The Phase 1 default score has program 25 (Acoustic Steel).** The
    default track should be Distortion Guitar.
 
+7. **`presetsFor()` returns more duplicates on every call.** Each call to
+   `Tuning.initialize()` appends the whole preset list again. The built-in
+   list also includes ukulele, mandolin, banjo, viola, cello and lute
+   presets. `presetsFor` must initialise only once, keep only presets whose
+   names start with "Guitar" or "Bass", and de-duplicate by pitches. Where
+   a built-in preset has the same pitches as one in our metal catalogue, it
+   takes the metal name ("Guitar Dropped D Tuning" becomes "Drop D").
+8. **Deleting bar 0 drops the tempo.** The tempo is stored on the first
+   master bar, so a score at 90 BPM becomes 120 after its first bar is
+   deleted. `deleteBar` moves the deleted bar's tempo automations onto the
+   new first bar when that bar has none of its own. Inserted bars copy the
+   neighbouring bar's clef, ottava and key signature, which alphaTab stores
+   per `Bar`.
+
 ## Architecture
 
 ### Structural commands mutate in place
@@ -118,7 +132,11 @@ other ways, and each was rejected:
   creates no undo entry.
 
 `ScoreView` renders only the selected track with
-`api.renderScore(score, [cursor.trackIndex])`. It re-renders when
+`api.renderScore(score, [cursor.trackIndex])`. Its `staveProfile` changes
+from `'ScoreTab'` to `'Default'`, which respects each staff's own
+`showStandardNotation` and `showTablature` flags. `'ScoreTab'` forces
+standard notation onto every staff, which would defeat the tab-only bass
+staff. It re-renders when
 `revision` or `cursor.trackIndex` changes. The cursor-highlight geometry is
 unchanged, because only one track is on screen.
 
@@ -144,15 +162,19 @@ When a track is added, it gets a unique name by suffixing a number
 
 ### MIDI channels
 
-Each track needs a primary and a secondary channel. Channel 9 is reserved
-for percussion.
+Each track needs a primary and a secondary channel.
 
-- `addTrack` allocates channels the same way the alphaTex importer does, so
-  the allocation survives the re-import that happens on undo.
-- The plan must verify that rule by probe.
-- `canAddTrack(score)` is false once no free pair is left. With 16 channels
-  and one reserved, that is 7 tracks. The plan confirms the exact number by
-  probe.
+- **Verified by probe:** the alphaTex importer assigns channels by track
+  position. Track `i` gets primary `2i` and secondary `2i + 1`. It does not
+  skip channel 9 and it has no cap: 10 tracks produced channels up to 19.
+  Undo re-imports the score, which reapplies that rule.
+- So `addTrack` and `removeTrack` reassign every track's channels with the
+  same rule, through the helper `assignChannels(score)`. The in-memory score
+  then always matches what an undo would produce.
+- `canAddTrack(score)` is `score.tracks.length < MAX_TRACKS`, where
+  `MAX_TRACKS = 8` (channels 0–15).
+- Phase 3 decides how channel 9 should behave for playback. It is recorded
+  here so the question isn't lost.
 
 ### New commands (one file each)
 
