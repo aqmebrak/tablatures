@@ -1,9 +1,11 @@
 import { advanceOrInsertBeat } from '$lib/score/commands/advanceOrInsertBeat';
 import { clearNote } from '$lib/score/commands/clearNote';
+import { deleteBar } from '$lib/score/commands/deleteBar';
+import { insertBar } from '$lib/score/commands/insertBar';
 import { scaleDuration, setDuration, toggleDotted } from '$lib/score/commands/setDuration';
 import { setFret } from '$lib/score/commands/setFret';
 import { toggleNoteArticulation } from '$lib/score/commands/toggleArticulation';
-import { moveBeat, moveString } from '$lib/score/cursor';
+import { clampCursor, moveBeat, moveString } from '$lib/score/cursor';
 import type { createEditor } from '$lib/score/editorStore.svelte';
 import type { EditorAction } from './keymap';
 
@@ -106,6 +108,16 @@ export function applyAction(editor: Editor, action: EditorAction): void {
 			break;
 		case 'redo':
 			editor.redo();
+			break;
+		case 'insertBar': {
+			const barIndex = editor.run('insert bar', insertBar);
+			editor.cursor = { ...editor.cursor, barIndex, beatIndex: 0 };
+			break;
+		}
+		case 'deleteBar':
+			if (editor.run('delete bar', deleteBar)) {
+				editor.cursor = clampCursor({ ...editor.cursor, beatIndex: 0 }, editor.shape());
+			}
 			break;
 	}
 }

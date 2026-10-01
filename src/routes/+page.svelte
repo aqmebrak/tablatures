@@ -9,10 +9,9 @@
 	import { resolveKey } from '$lib/editor/keymap';
 	import { createEditor } from '$lib/score/editorStore.svelte';
 
-	// Phase 1 ships a fixed-length score: 8 bars gives arrow-key navigation
-	// and fret typing something real to move across out of the box. Beats
-	// within a bar insert automatically via ArrowRight; adding or removing
-	// whole bars (document structure editing) is Phase 2 scope.
+	// Start with 8 empty bars. Bars can be inserted/deleted (Ctrl+Insert /
+	// Ctrl+Delete, or the palette), and ArrowRight past the last full bar
+	// appends one.
 	const editor = createEditor({ bars: 8 });
 
 	function isEditableTarget(target: EventTarget | null): boolean {
@@ -29,6 +28,11 @@
 		// <select> elements in InstrumentInspector) — only intercept keys when
 		// the editor canvas itself has focus.
 		if (isEditableTarget(event.target)) return;
+		// Don't hijack keystrokes meant for an open bits-ui menu (e.g. the "+
+		// Add track" dropdown): arrow keys and typeahead letters/digits are
+		// consumed by the menu itself.
+		if (event.defaultPrevented) return;
+		if ((event.target as Element | null)?.closest?.('[role="menu"]')) return;
 		const action = resolveKey(event);
 		if (!action) return;
 		event.preventDefault();
@@ -58,6 +62,6 @@
 		</aside>
 	</div>
 	<footer class="h-32 shrink-0 overflow-y-auto border-t border-neutral-800" data-testid="tracks">
-		<TrackList />
+		<TrackList {editor} />
 	</footer>
 </div>

@@ -41,9 +41,9 @@
 	onMount(() => {
 		api = new alphaTab.AlphaTabApi(host, {
 			core: { fontDirectory: '/font/', includeNoteBounds: true },
-			display: { staveProfile: 'ScoreTab' }
+			display: { staveProfile: 'Default' }
 		});
-		api.renderScore(score, [0]);
+		api.renderScore(score, [cursor.trackIndex]);
 		// Reposition the highlight after every (re-)layout — a revision-driven
 		// re-render, or a window resize that alphaTab re-lays-out on its own.
 		// `postRenderFinished` (not `renderFinished`) is the point at which
@@ -55,10 +55,12 @@
 
 	// alphaTab does not observe mutations to the score object graph; every
 	// command bumps `revision`, and this effect is what actually triggers a
-	// re-render in response (AGENTS.md rule #4).
+	// re-render in response (AGENTS.md rule #4). Only the selected track is
+	// rendered, so selecting another track re-renders too.
+	const trackIndex = $derived(cursor.trackIndex);
 	$effect(() => {
 		void revision;
-		api?.renderScore(score, [0]);
+		api?.renderScore(score, [trackIndex]);
 	});
 
 	// Pure cursor movement (no score mutation, so no revision bump — see

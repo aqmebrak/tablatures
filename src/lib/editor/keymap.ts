@@ -10,7 +10,9 @@ export type EditorAction =
 	| { kind: 'dotted' }
 	| { kind: 'articulation'; name: NoteArticulation }
 	| { kind: 'undo' }
-	| { kind: 'redo' };
+	| { kind: 'redo' }
+	| { kind: 'insertBar' }
+	| { kind: 'deleteBar' };
 
 const ARTICULATIONS: Record<string, NoteArticulation> = {
 	p: 'palmMute',
@@ -32,6 +34,8 @@ export function resolveKey(event: {
 
 	if (mod && key.toLowerCase() === 'z') return shiftKey ? { kind: 'redo' } : { kind: 'undo' };
 	if (mod && key.toLowerCase() === 'y') return { kind: 'redo' };
+	if (mod && key === 'Insert') return { kind: 'insertBar' };
+	if (mod && key === 'Delete') return { kind: 'deleteBar' };
 	if (mod) return undefined;
 
 	if (/^[0-9]$/.test(key)) return { kind: 'fret', digit: Number(key) };

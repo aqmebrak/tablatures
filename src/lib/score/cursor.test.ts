@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { clampCursor, moveBeat, moveString, type Cursor, type ScoreShape } from './cursor';
+import {
+	clampCursor,
+	moveBeat,
+	moveString,
+	shiftCursorString,
+	type Cursor,
+	type ScoreShape
+} from './cursor';
 
-const shape: ScoreShape = { barCount: 3, beatsPerBar: () => 4, stringCount: 6 };
+const shape: ScoreShape = { barCount: 3, beatsPerBar: () => 4, stringCount: 6, trackCount: 1 };
 const at = (barIndex: number, beatIndex: number, stringNumber = 6): Cursor => ({
 	trackIndex: 0,
 	voiceIndex: 0,
@@ -47,5 +54,19 @@ describe('cursor navigation', () => {
 		expect(clamped.barIndex).toBe(2);
 		expect(clamped.beatIndex).toBe(3);
 		expect(clamped.stringNumber).toBe(6);
+	});
+
+	it('clamps the track index to the existing tracks', () => {
+		const twoTracks: ScoreShape = { ...shape, trackCount: 2 };
+		expect(clampCursor({ ...at(0, 0), trackIndex: 5 }, twoTracks).trackIndex).toBe(1);
+		expect(clampCursor({ ...at(0, 0), trackIndex: -1 }, twoTracks).trackIndex).toBe(0);
+	});
+
+	it('shifts the cursor string with a string-count change so it stays on the same physical string', () => {
+		const seven: ScoreShape = { ...shape, stringCount: 7 };
+		expect(shiftCursorString(at(0, 0, 1), 1, seven).stringNumber).toBe(2); // 6 -> 7
+		const five: ScoreShape = { ...shape, stringCount: 5 };
+		expect(shiftCursorString(at(0, 0, 1), -1, five).stringNumber).toBe(1); // removed string: clamp
+		expect(shiftCursorString(at(0, 0, 6), -1, five).stringNumber).toBe(5);
 	});
 });

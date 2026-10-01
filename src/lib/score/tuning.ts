@@ -29,16 +29,46 @@ export const METAL_PRESETS: Record<number, TuningPreset[]> = {
 	]
 };
 
-/** alphaTab's built-in presets, plus our metal catalogue, de-duplicated by name. */
+/**
+ * alphaTab's Tuning.initialize() APPENDS its preset list every time it runs,
+ * so it must run at most once. (It is also triggered lazily inside
+ * alphaTab when the list is empty; the length check covers that.)
+ */
+export function ensureTuningsInitialized(): void {
+	if (alphaTab.model.Tuning.getPresetsFor(6).length === 0) alphaTab.model.Tuning.initialize();
+}
+
+const pitchKey = (tunings: number[]) => tunings.join(',');
+
+/**
+ * Guitar/bass presets for a string count: alphaTab's built-ins (non-fretted
+ * instruments filtered out), then our metal catalogue. Where a built-in has
+ * the same pitches as a catalogue entry, the catalogue's name wins
+ * ("Drop D", not "Guitar Dropped D Tuning"). De-duplicated by pitches.
+ */
 export function presetsFor(stringCount: number): TuningPreset[] {
-	alphaTab.model.Tuning.initialize();
-	const builtin: TuningPreset[] = alphaTab.model.Tuning.getPresetsFor(stringCount).map((t) => ({
-		name: t.name,
-		tunings: [...t.tunings]
-	}));
-	const seen = new Set(builtin.map((p) => p.name));
-	const extra = (METAL_PRESETS[stringCount] ?? []).filter((p) => !seen.has(p.name));
-	return [...builtin, ...extra];
+	ensureTuningsInitialized();
+	const metal = METAL_PRESETS[stringCount] ?? [];
+	const metalName = new Map(metal.map((p) => [pitchKey(p.tunings), p.name]));
+	const builtin: TuningPreset[] = alphaTab.model.Tuning.getPresetsFor(stringCount)
+		.filter((t) => /^(Guitar|Bass)\b/.test(t.name))
+		.map((t) => ({
+			name: metalName.get(pitchKey(t.tunings)) ?? t.name,
+			tunings: [...t.tunings]
+		}));
+	const seen = new Set<string>();
+	return [...builtin, ...metal].filter((p) => {
+		const key = pitchKey(p.tunings);
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+}
+
+/** The preset name for these exact pitches, or 'Custom'. */
+export function labelForTuning(tunings: number[]): string {
+	const key = pitchKey(tunings);
+	return presetsFor(tunings.length).find((p) => pitchKey(p.tunings) === key)?.name ?? 'Custom';
 }
 
 export function describeTuning(tunings: number[]): string {

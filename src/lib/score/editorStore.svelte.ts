@@ -28,8 +28,12 @@ export function createEditor(options: NewScoreOptions = {}) {
 	}
 
 	function shape(): ScoreShape {
-		const staff = score.tracks[cursor.trackIndex].staves[0];
+		// cursor.trackIndex can point past the end right after an undo removes
+		// a track; describe the track clampCursor will land on.
+		const trackIndex = Math.min(Math.max(0, cursor.trackIndex), score.tracks.length - 1);
+		const staff = score.tracks[trackIndex].staves[0];
 		return {
+			trackCount: score.tracks.length,
 			barCount: staff.bars.length,
 			beatsPerBar: (barIndex) => staff.bars[barIndex]?.voices[cursor.voiceIndex]?.beats.length ?? 0,
 			stringCount: staff.stringTuning.tunings.length
@@ -88,6 +92,12 @@ export function createEditor(options: NewScoreOptions = {}) {
 		},
 		breakCoalesce() {
 			history.breakCoalesce();
+		},
+		/** Navigation, not an edit: no history entry. */
+		selectTrack(trackIndex: number) {
+			if (!score.tracks[trackIndex]) return;
+			history.breakCoalesce();
+			cursor = { trackIndex, barIndex: 0, voiceIndex: 0, beatIndex: 0, stringNumber: 1 };
 		}
 	};
 }

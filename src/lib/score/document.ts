@@ -1,6 +1,7 @@
 import * as alphaTab from '@coderline/alphatab';
+import { TRACK_DEFAULTS } from './instruments';
 import { fromAlphaTex } from './serialize';
-import { describeTuning, presetsFor } from './tuning';
+import { describeTuning, ensureTuningsInitialized, presetsFor } from './tuning';
 
 type Score = alphaTab.model.Score;
 
@@ -13,7 +14,7 @@ export type NewScoreOptions = {
 };
 
 function defaultTuningFor(stringCount: number): number[] {
-	alphaTab.model.Tuning.initialize();
+	ensureTuningsInitialized();
 	const preset = alphaTab.model.Tuning.getDefaultTuningFor(stringCount);
 	if (preset) return [...preset.tunings];
 	return presetsFor(stringCount)[0].tunings;
@@ -36,6 +37,7 @@ export function createScore(options: NewScoreOptions = {}): Score {
 	const tuningText = describeTuning(tuning).toLowerCase();
 	const tex =
 		`\\title "${title.replace(/"/g, '\\"')}" \\tempo ${tempo} . ` +
+		`\\track "${TRACK_DEFAULTS.guitar.name}" \\instrument ${TRACK_DEFAULTS.guitar.program} ` +
 		`\\tuning ${tuningText} . ${emptyBars}`;
 
 	return fromAlphaTex(tex);

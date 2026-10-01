@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { addTrack } from './commands/addTrack';
 import { setFret } from './commands/setFret';
 import { createEditor } from './editorStore.svelte';
 
@@ -54,5 +55,42 @@ describe('editor store', () => {
 
 		expect(editor.revision).toBe(before);
 		expect(editor.canUndo).toBe(false);
+	});
+
+	it('selects a track: cursor moves to its first beat, no undo entry', () => {
+		const editor = createEditor({ bars: 2 });
+		editor.run('add track', (ctx) => addTrack(ctx, 'bass'));
+		const revision = editor.revision;
+		editor.cursor = { ...editor.cursor, barIndex: 1, stringNumber: 5 };
+
+		editor.selectTrack(1);
+
+		expect(editor.cursor).toEqual({
+			trackIndex: 1,
+			barIndex: 0,
+			voiceIndex: 0,
+			beatIndex: 0,
+			stringNumber: 1
+		});
+		expect(editor.revision).toBe(revision);
+		expect(editor.shape().stringCount).toBe(4);
+	});
+
+	it('ignores selecting a track that does not exist', () => {
+		const editor = createEditor();
+		editor.selectTrack(3);
+		expect(editor.cursor.trackIndex).toBe(0);
+	});
+
+	it('undoing an added track while it is selected moves the cursor back to a real track', () => {
+		const editor = createEditor();
+		const index = editor.run('add track', (ctx) => addTrack(ctx, 'bass'));
+		editor.selectTrack(index!);
+
+		editor.undo();
+
+		expect(editor.score.tracks.length).toBe(1);
+		expect(editor.cursor.trackIndex).toBe(0);
+		expect(editor.shape().trackCount).toBe(1);
 	});
 });

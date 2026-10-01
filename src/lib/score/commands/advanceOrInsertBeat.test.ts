@@ -67,15 +67,26 @@ describe('advanceOrInsertBeat', () => {
 		});
 	});
 
-	it('is a no-op at the end of the document (last bar, full)', () => {
-		// A single 4/4 bar, exactly full, and no bar after it.
+	it('appends a bar at the end of the score and moves onto it, carrying the duration', () => {
+		// A single 4/4 bar, exactly full with quarters, and no bar after it.
 		const ctx = ctxFor('\\tuning e4 b3 g3 d3 a2 e2 . 0.6.4 0.6.4 0.6.4 0.6.4', 3, 0);
-		const before = beatsIn(ctx, 0).length;
 
 		const cursor = advanceOrInsertBeat(ctx);
 
-		expect(beatsIn(ctx, 0).length).toBe(before);
-		expect(cursor).toEqual(ctx.cursor);
+		expect(ctx.score.masterBars.length).toBe(2);
+		expect(ctx.score.tracks[0].staves[0].bars.length).toBe(2);
+		expect(beatsIn(ctx, 1).length).toBe(1);
+		expect(beatsIn(ctx, 1)[0].notes.length).toBe(0);
+		expect(beatsIn(ctx, 1)[0].duration).toBe(alphaTab.model.Duration.Quarter);
+		expect(cursor).toEqual({ ...ctx.cursor, barIndex: 1, beatIndex: 0 });
+	});
+
+	it('appends the new bar to every track', () => {
+		const ctx = ctxFor(
+			'\\track "A" \\tuning e4 b3 g3 d3 a2 e2 . 0.6.1 \\track "B" \\tuning g2 d2 a1 e1 . 0.4.1'
+		);
+		advanceOrInsertBeat(ctx);
+		expect(ctx.score.tracks[1].staves[0].bars.length).toBe(2);
 	});
 
 	it('leaves the score consistent enough to re-serialize after inserting', () => {

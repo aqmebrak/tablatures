@@ -39,4 +39,12 @@ describe('keymap', () => {
 	it('ignores unmapped keys', () => {
 		expect(key('F5')).toBeUndefined();
 	});
+
+	it('maps Ctrl/Cmd+Insert and Ctrl/Cmd+Delete to bar insert/delete', () => {
+		expect(key('Insert', { ctrlKey: true })).toEqual({ kind: 'insertBar' });
+		expect(key('Insert', { metaKey: true })).toEqual({ kind: 'insertBar' });
+		expect(key('Delete', { ctrlKey: true })).toEqual({ kind: 'deleteBar' });
+		expect(key('Delete', { metaKey: true })).toEqual({ kind: 'deleteBar' });
+		expect(key('Delete')).toEqual({ kind: 'clear' }); // plain Delete still clears a note
+	});
 });

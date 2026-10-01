@@ -8,6 +8,7 @@ export type Cursor = {
 };
 
 export type ScoreShape = {
+	trackCount: number;
 	barCount: number;
 	beatsPerBar: (barIndex: number) => number;
 	stringCount: number;
@@ -43,9 +44,19 @@ export function moveString(cursor: Cursor, delta: number, shape: ScoreShape): Cu
 	return { ...cursor, stringNumber };
 }
 
+/**
+ * After a string-count change of `delta` (strings added/removed at the low
+ * end), keep the cursor on the same physical string: note.string numbering
+ * shifts by delta, so the cursor must too.
+ */
+export function shiftCursorString(cursor: Cursor, delta: number, shape: ScoreShape): Cursor {
+	return clampCursor({ ...cursor, stringNumber: cursor.stringNumber + delta }, shape);
+}
+
 export function clampCursor(cursor: Cursor, shape: ScoreShape): Cursor {
+	const trackIndex = Math.min(shape.trackCount - 1, Math.max(0, cursor.trackIndex));
 	const barIndex = Math.min(shape.barCount - 1, Math.max(0, cursor.barIndex));
 	const beatIndex = Math.min(shape.beatsPerBar(barIndex) - 1, Math.max(0, cursor.beatIndex));
 	const stringNumber = Math.min(shape.stringCount, Math.max(1, cursor.stringNumber));
-	return { ...cursor, barIndex, beatIndex, stringNumber };
+	return { ...cursor, trackIndex, barIndex, beatIndex, stringNumber };
 }

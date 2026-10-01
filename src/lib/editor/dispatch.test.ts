@@ -282,3 +282,43 @@ describe('dispatch multi-digit fret buffering', () => {
 		expect(editor.score.tracks[0].staves[0].bars.length).toBe(2);
 	});
 });
+
+describe('dispatch bar actions', () => {
+	it('insertBar adds a bar after the cursor and moves onto it', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor({ bars: 2 });
+
+		applyAction(editor, { kind: 'insertBar' });
+
+		expect(editor.score.masterBars.length).toBe(3);
+		expect(editor.cursor.barIndex).toBe(1);
+		expect(editor.cursor.beatIndex).toBe(0);
+		expect(editor.canUndo).toBe(true);
+	});
+
+	it('deleteBar on the last bar leaves the cursor on the new last bar', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor({ bars: 3 });
+		editor.cursor = { ...editor.cursor, barIndex: 2 };
+
+		applyAction(editor, { kind: 'deleteBar' });
+
+		expect(editor.score.masterBars.length).toBe(2);
+		expect(editor.cursor.barIndex).toBe(1);
+		expect(editor.cursor.beatIndex).toBe(0);
+	});
+
+	it('deleteBar on the only bar changes nothing and records no undo', async () => {
+		const applyAction = await freshApplyAction();
+		const editor = createEditor({ bars: 1 });
+		editor.cursor = { ...editor.cursor, beatIndex: 1 };
+		const cursorBefore = { ...editor.cursor };
+
+		applyAction(editor, { kind: 'deleteBar' });
+
+		expect(editor.score.masterBars.length).toBe(1);
+		expect(editor.canUndo).toBe(false);
+		// A refused delete must leave the cursor untouched, not reset beatIndex.
+		expect(editor.cursor).toEqual(cursorBefore);
+	});
+});
